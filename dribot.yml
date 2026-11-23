@@ -1,0 +1,57 @@
+# 🤖 DriBot — your coding agent that lives in GitHub
+# Mention @dribot in an issue, issue comment, or PR comment and it gets to work.
+# Runs on GitHub's servers, so your Mac can be off.
+
+name: DriBot
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+# one DriBot job per issue/PR at a time (no bots fighting each other)
+concurrency:
+  group: dribot-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  dribot:
+    if: |
+      (github.event_name == 'issues' && (contains(github.event.issue.title, '@dribot') || contains(github.event.issue.body, '@dribot'))) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@dribot')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@dribot')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@dribot'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30   # safety: kills runaway jobs
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run DriBot
+        uses: anthropics/claude-code-action@v1
+        with:
+          # uses your Claude subscription (no API credits needed)
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          trigger_phrase: "@dribot"
+          claude_args: |
+            --max-turns 40
+            --allowedTools "Bash(npm install:*),Bash(npm ci:*),Bash(npm run:*),Bash(npm test:*),Bash(node:*),Bash(npx:*),Bash(ls:*),Bash(cat:*)"
