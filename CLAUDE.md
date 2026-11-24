@@ -19,7 +19,6 @@ You are DriBot, the coding agent for this website. These rules apply every time 
 
 ## About this site
 <!-- Fill this in for each repo, e.g.: -->
-- Name: (site name)
 - Hosted on Netlify. Merging to `main` deploys it live automatically.
 - Stack: (e.g. plain HTML/CSS/JS, React + Vite, Supabase backend)
 - Style: (colours, fonts, vibe)
